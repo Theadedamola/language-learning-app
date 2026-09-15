@@ -78,12 +78,13 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    let parsed = {
+    let parsed: any = {
       outcome: 'uncertain',
       suggestedLevel: 1,
       nextGoal: 'Continúa practicando.',
       capability: '',
       words: [],
+      phrases: [],
     };
 
     try {
@@ -102,8 +103,25 @@ export async function POST(req: NextRequest) {
       console.warn('[Assessment] JSON parse warning, using fallback:', parseErr);
     }
 
+    // Sanitize and format extracted useful phrases
+    const rawPhrases = Array.isArray(parsed.phrases) ? parsed.phrases : [];
+    const sanitizedPhrases = rawPhrases
+      .filter((p: any) => p && typeof p.phrase === 'string' && p.phrase.trim().length > 3)
+      .map((p: any, idx: number) => ({
+        id: `phrase_${Date.now()}_${idx}`,
+        phrase: p.phrase.trim(),
+        translation: p.translation ? String(p.translation).trim() : '',
+        context: p.context ? String(p.context).trim() : 'Conversational Spanish',
+        originalSaid: p.originalSaid ? String(p.originalSaid).trim() : undefined,
+        explanation: p.explanation ? String(p.explanation).trim() : undefined,
+        mastery: 0,
+        reviewCount: 0,
+        createdAt: new Date().toISOString(),
+      }));
+
     return NextResponse.json({
       assessment: parsed,
+      phrases: sanitizedPhrases,
       usage: {
         input: response.usage?.input_tokens ?? 0,
         output: response.usage?.output_tokens ?? 0,

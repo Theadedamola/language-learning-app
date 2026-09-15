@@ -4,10 +4,11 @@ import React from 'react';
 import { Sliders, Mic, Sparkles, BookOpen } from 'lucide-react';
 
 interface HeaderProps {
-  activeTab: 'talk' | 'themes' | 'words';
-  onTabChange: (tab: 'talk' | 'themes' | 'words') => void;
+  activeTab: 'talk' | 'themes' | 'words' | 'quiz';
+  onTabChange: (tab: 'talk' | 'themes' | 'words' | 'quiz') => void;
   onOpenSettings: () => void;
   wordCount: number;
+  phraseCount?: number;
   hasApiKey: boolean;
 }
 
@@ -16,6 +17,7 @@ export const Header: React.FC<HeaderProps> = ({
   onTabChange,
   onOpenSettings,
   wordCount,
+  phraseCount = 0,
   hasApiKey,
 }) => {
   return (
@@ -33,7 +35,7 @@ export const Header: React.FC<HeaderProps> = ({
         <nav className="flex items-center gap-1 bg-[#FFE3CF]/40 p-1 rounded-2xl border border-[#FFE3CF]/50">
           <button
             onClick={() => onTabChange('talk')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               activeTab === 'talk'
                 ? 'bg-white text-[#362A22] shadow-xs'
                 : 'text-[#735B4A] hover:text-[#362A22]'
@@ -45,7 +47,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           <button
             onClick={() => onTabChange('themes')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               activeTab === 'themes'
                 ? 'bg-white text-[#362A22] shadow-xs'
                 : 'text-[#735B4A] hover:text-[#362A22]'
@@ -57,7 +59,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           <button
             onClick={() => onTabChange('words')}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               activeTab === 'words'
                 ? 'bg-white text-[#362A22] shadow-xs'
                 : 'text-[#735B4A] hover:text-[#362A22]'
@@ -68,6 +70,23 @@ export const Header: React.FC<HeaderProps> = ({
             {wordCount > 0 && (
               <span className="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-[#FFF0C7] text-[#FF8A4C] font-bold">
                 {wordCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => onTabChange('quiz')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              activeTab === 'quiz'
+                ? 'bg-white text-[#362A22] shadow-xs'
+                : 'text-[#735B4A] hover:text-[#362A22]'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            <span>Quiz</span>
+            {phraseCount > 0 && (
+              <span className="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-[#EAECD6] text-[#5A7A3A] font-bold">
+                {phraseCount}
               </span>
             )}
           </button>

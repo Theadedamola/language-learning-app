@@ -13,12 +13,15 @@ import { WebSpeechTransport } from '@/voice/webSpeechTransport';
 import { WebRTCTransport } from '@/voice/webrtcTransport';
 import { StorageService } from '@/storage/db';
 
+import { UsefulPhrase } from '@/core/types/phrase';
+
 interface TalkViewProps {
   theme: ConversationTheme | null;
   preferences: Preferences;
   learner: LearnerState;
   onSessionUpdated: (session: SessionRecord) => void;
   onOpenSettings: () => void;
+  onPhrasesExtracted?: (phrases: UsefulPhrase[]) => void;
 }
 
 export const TalkView: React.FC<TalkViewProps> = ({
@@ -27,6 +30,7 @@ export const TalkView: React.FC<TalkViewProps> = ({
   learner,
   onSessionUpdated,
   onOpenSettings,
+  onPhrasesExtracted,
 }) => {
   const [connectionState, setConnectionState] = useState<
     'idle' | 'connecting' | 'active' | 'closing' | 'ended' | 'failed'
@@ -160,6 +164,14 @@ export const TalkView: React.FC<TalkViewProps> = ({
             setSession(updatedSession);
             await StorageService.saveSession(updatedSession);
             onSessionUpdated(updatedSession);
+          }
+
+          // Save and propagate any extracted useful conversational phrases
+          if (data.phrases && Array.isArray(data.phrases) && data.phrases.length > 0) {
+            for (const p of data.phrases) {
+              await StorageService.savePhrase(p);
+            }
+            onPhrasesExtracted?.(data.phrases);
           }
         }
       } catch (e) {

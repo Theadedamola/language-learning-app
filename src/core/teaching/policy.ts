@@ -29,7 +29,12 @@ CORE CONVERSATIONAL RULES (MUST FOLLOW IN EVERY TURN):
 1. PROACTIVELY LEAD THE CONVERSATION: Never give a passive or dead-end answer. Actively drive the dialogue forward within the chosen scene: "${theme?.title ?? 'Conversación libre'}". Embody the situation naturally (e.g. friendly barista, local market vendor, close friend sharing tapas).
 2. ALWAYS END WITH EXACTLY ONE QUESTION: Every single response you give MUST end with one natural, engaging question in Spanish to invite the learner to speak. Give concrete options if helpful (e.g. "¿Prefieres X o Y?").
 3. KEEP REPLIES SHORT & NATURAL: Speak 1 to 3 short sentences maximum (under 30 words total). Learners need quick, digestible turns, not lectures or monologues.
-4. GENTLE RECASTING: If the learner makes a grammar mistake or uses English words for support, acknowledge what they meant, naturally weave the correct Spanish phrase into your response, and immediately follow up with your question.
+4. GENTLE CONVERSATIONAL CORRECTION & RECASTING (MANDATORY WHEN ERROR OCCURS):
+   If the learner makes a grammar mistake, misconjugates a verb, or uses English words (e.g. "yo tiene hambre", "donde esta el baño", "quiero pay"), warmly acknowledge what they meant using a natural Spanish conversational recast before continuing:
+   - e.g.: "¡Ah, quieres decir 'tengo hambre'!"
+   - e.g.: "¡Exacto, se dice '¿dónde está el baño?'!"
+   - e.g.: "¡Claro, quieres decir 'quiero pagar'!"
+   Immediately follow up with your friendly answer and your next question (e.g. "¡Sí! ¿Qué comida te apetece tomar? ¿Unas patatas fritas con pollo?"). Keep it warm, casual, and supportive like a native friend.
 5. NEVER TRANSLATE ALOUD: Speak exclusively in Spanish. Meaning subtitles in ${meaningLanguage} are handled separately by the app.
 
 Current Scene Context: ${theme?.situation ?? 'Conversación libre. Sigue los intereses del usuario y su día a día.'}
@@ -63,13 +68,17 @@ suggestedLevel is a provisional 0–5 challenge recommendation based on communic
 4 = nuance, hypothetical, condicional
 5 = advanced debate & idiomatic flow
 
-Log at most 6 useful words/chunks from the TARGET user passage:
+Log at most 4 useful words/chunks from the TARGET user passage:
 - sourceIDs must be the exact fragment IDs from the TARGET.
 - quote must be an exact substring of the passage.
 - form must occur in quote.
 - lemma: nouns with singular article (e.g. "el libro", "la casa"), verbs in infinitive ("hablar", "comer"), reflexives distinct ("llamarse").
 - meaning: concise English glossary sense.
 - confidence: 0.0 to 1.0 judgment certainty.
+
+Extract 1 to 2 complete USEFUL PHRASES for daily conversational remembrance:
+- Must be complete, practical everyday Spanish sentences (e.g. "Tengo mucha hambre", "¿Me puedes poner un café con leche?", "¿A qué hora abre la tienda?").
+- If the learner made a mistake that was recast/corrected by the assistant, extract the corrected sentence and note what the user originally said.
 `.trim();
   },
 
@@ -79,7 +88,7 @@ Log at most 6 useful words/chunks from the TARGET user passage:
   assessmentSchema(): Record<string, unknown> {
     return {
       type: 'object',
-      required: ['outcome', 'suggestedLevel', 'nextGoal', 'capability', 'words'],
+      required: ['outcome', 'suggestedLevel', 'nextGoal', 'capability', 'words', 'phrases'],
       properties: {
         outcome: {
           type: 'string',
@@ -100,7 +109,7 @@ Log at most 6 useful words/chunks from the TARGET user passage:
         },
         words: {
           type: 'array',
-          maxItems: 8,
+          maxItems: 4,
           items: {
             type: 'object',
             required: ['lemma', 'meaning', 'form', 'quote', 'language', 'kind', 'confidence', 'sourceIDs'],
@@ -119,6 +128,22 @@ Log at most 6 useful words/chunks from the TARGET user passage:
                 type: 'array',
                 items: { type: 'string' },
               },
+            },
+          },
+        },
+        phrases: {
+          type: 'array',
+          maxItems: 2,
+          description: 'High-value complete everyday Spanish sentences for quiz and remembrance.',
+          items: {
+            type: 'object',
+            required: ['phrase', 'translation', 'context'],
+            properties: {
+              phrase: { type: 'string', description: 'Complete natural Spanish sentence' },
+              translation: { type: 'string', description: 'English translation' },
+              context: { type: 'string', description: 'Everyday context or usage situation' },
+              originalSaid: { type: 'string', description: 'What user originally said if corrected' },
+              explanation: { type: 'string', description: 'Helpful grammar or usage tip' },
             },
           },
         },

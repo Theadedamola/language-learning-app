@@ -5,20 +5,23 @@ import { Header } from '@/components/ui/Header';
 import { TalkView } from '@/components/talk/TalkView';
 import { ThemesView } from '@/components/themes/ThemesView';
 import { WordsView } from '@/components/words/WordsView';
+import { QuizView } from '@/components/quiz/QuizView';
 import { SettingsModal } from '@/components/settings/SettingsModal';
 import { ConversationTheme, spanishModule } from '@/core/teaching/spanish';
 import { Preferences, SessionRecord } from '@/core/types/models';
 import { LearnerState } from '@/core/types/vocabulary';
+import { UsefulPhrase } from '@/core/types/phrase';
 import { PreferenceStore } from '@/storage/preferenceStore';
 import { StorageService } from '@/storage/db';
 import { SpacedRepetition } from '@/core/learning/spacedRepetition';
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'talk' | 'themes' | 'words'>('talk');
+  const [activeTab, setActiveTab] = useState<'talk' | 'themes' | 'words' | 'quiz'>('talk');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [preferences, setPreferences] = useState<Preferences>(PreferenceStore.get());
   const [selectedTheme, setSelectedTheme] = useState<ConversationTheme | null>(spanishModule.themes[0]);
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
+  const [phrases, setPhrases] = useState<UsefulPhrase[]>([]);
   const [learner, setLearner] = useState<LearnerState>({
     challenge: 0,
     observationCount: 0,
@@ -33,7 +36,7 @@ export default function Home() {
     setLearner(projected);
   }, [sessions]);
 
-  // Load preferences and initial sessions on mount
+  // Load preferences, initial sessions, and phrases on mount
   useEffect(() => {
     const prefs = PreferenceStore.get();
     setPreferences(prefs);
@@ -41,7 +44,33 @@ export default function Home() {
     StorageService.getAllSessions('es').then((loaded) => {
       setSessions(loaded);
     });
+
+    StorageService.getAllPhrases().then((loaded) => {
+      setPhrases(loaded);
+    });
   }, []);
+
+  // Handle newly extracted useful phrases from conversation
+  const handlePhrasesExtracted = useCallback((newPhrases: UsefulPhrase[]) => {
+    setPhrases((prev) => {
+      const existingIds = new Set(prev.map((p) => p.phrase.toLowerCase()));
+      const filtered = newPhrases.filter((p) => !existingIds.has(p.phrase.toLowerCase()));
+      return [...filtered, ...prev];
+    });
+  }, []);
+
+  // Update mastery level on quiz answer
+  const handleUpdateMastery = async (id: string, correct: boolean) => {
+    const updated = await StorageService.updatePhraseMastery(id, correct);
+    if (updated) {
+      setPhrases((prev) => prev.map((p) => (p.id === id ? updated : p)));
+    }
+  };
+
+  const handleDeletePhrase = async (id: string) => {
+    await StorageService.deletePhrase(id);
+    setPhrases((prev) => prev.filter((p) => p.id !== id));
+  };
 
   // When a session is saved or updated
   const handleSessionUpdated = useCallback((updated: SessionRecord) => {
@@ -96,6 +125,7 @@ export default function Home() {
         onTabChange={setActiveTab}
         onOpenSettings={() => setIsSettingsOpen(true)}
         wordCount={learner.words.length}
+        phraseCount={phrases.length}
         hasApiKey={hasApiKey}
       />
 
@@ -108,6 +138,7 @@ export default function Home() {
             learner={learner}
             onSessionUpdated={handleSessionUpdated}
             onOpenSettings={() => setIsSettingsOpen(true)}
+            onPhrasesExtracted={handlePhrasesExtracted}
           />
         )}
 
@@ -120,6 +151,16 @@ export default function Home() {
 
         {activeTab === 'words' && (
           <WordsView learner={learner} />
+        )}
+
+        {activeTab === 'quiz' && (
+          <QuizView
+            phrases={phrases}
+            onUpdateMastery={handleUpdateMastery}
+            onDeletePhrase={handleDeletePhrase}
+            deepgramKey={preferences.deepgramKey}
+            deepgramVoice={preferences.deepgramVoice}
+          />
         )}
       </main>
 
